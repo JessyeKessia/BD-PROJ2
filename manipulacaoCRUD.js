@@ -47,5 +47,67 @@ db.projetos.find(
  .limit(3);
 
 
+// Consulta com pelo menos aggregate e lookup: Retorna a lista de projetos, sendo cada um com detalhes de materiais e engenheiros que estão associados ao projeto
+db.projetos.aggregate([
+    {
+        $lookup: {
+            from: "materiais",
+            localField: "materiais._id",
+            foreignField: "_id",
+            as: "materiais_info"
+        }
+    },
+    {
+        $unwind: "$materiais_info" 
+    },
+    {
+        $lookup: {
+            from: "engenheiros", 
+            localField: "engenheiros._id",
+            foreignField: "_id",
+            as: "engenheiros_info"
+        }
+    },
+    {
+        $unwind: "$engenheiros_info" 
+    }
+])
 
-
+// Outra Consulta a seu critério, dentro do contexto da aplicação Cria uma consulta que busca os projetos com status de concluído e que utilizam argamassa como material específico.
+db.projetos.aggregate([
+    {
+        $match: {
+            status: "Concluído"
+        }
+    },
+    {
+        $unwind: "$materiais"
+    },
+    {
+        $match: {
+            "materiais.descricao": "Argamassa"
+        }
+    },
+    {
+        $lookup: {
+            from: "engenheiros", 
+            localField: "engenheiros._id",
+            foreignField: "_id",
+            as: "engenheiros_info"
+        }
+    },
+    {
+        $unwind: "$engenheiros_info"
+    },
+    {
+        $project: {
+            _id: 1,
+            descricao: 1,
+            endereco: 1,
+            "materiais.descricao": 1,
+            "materiais.quantidade": 1,
+            "engenheiros_info.nome": 1
+        }
+    }
+])
+//Essa consulta que visa tronar mais facil a compreensão sobre quais projetos utilizam materiais especificos.
